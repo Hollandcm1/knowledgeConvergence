@@ -3,4 +3,5 @@
 export(build_group_centroid)
 export(build_group_running_centroid)
 export(build_participant_running_centroid)
+export(run_kc)
 export(visualize_kc_plot)
