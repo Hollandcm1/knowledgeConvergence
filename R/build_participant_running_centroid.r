@@ -23,45 +23,37 @@
 #' result <- build_group_centroid(my_data)
 #' participant_sims <- build_participant_running_centroid(result)
 #' }
-build_participant_running_centroid <- function(group_centroid_result, verbose = TRUE) {
+build_participant_running_centroid <- function(single_group_df, group_centroid, verbose) {
 
   if (verbose) message("Building participant running centroids...")
 
-  # Extract LSA result
-  lsa_result <- group_centroid_result$lsa_result
+  participant_names <- unique(single_group_df$participant)
 
-  # Get unique participants
-  unique_participants <- unique(group_centroid_result$df$participant)
+  participant_running_centroids <- lapply(participant_names, function(participant) {
+    if (verbose) message("Processing participant: ", participant)
+    participant_df <- single_group_df[single_group_df$participant == participant, ]
+    # preserve original row index from the `X` column
+    row_index <- participant_df$X
 
-  # Prepare results
-  result_list <- list()
+    # select all columns except participant, group, X, and text
+    participant_vectors <- participant_df %>%
+      select(-participant, -group, -X, -text)
 
-  for (participant in unique_participants) {
-    participant_indices <- which(group_centroid_result$df$participant == participant)
-    dk_participant <- lsa_result$dk[participant_indices, , drop = FALSE]
-    
-    # Calculate cumulative sum
-    cumulative_sum <- matrix(0, nrow = nrow(dk_participant), ncol = ncol(dk_participant))
-    cumulative_sum[1, ] <- dk_participant[1, ]
-    if (nrow(dk_participant) > 1) {
-      for (i in 2:nrow(dk_participant)) {
-        cumulative_sum[i, ] <- cumulative_sum[i - 1, ] + dk_participant[i, ]
-      }
-    }
+    # calculate the participant centroid
+    participant_centroid <- colMeans(participant_vectors)
 
-    # Calculate cosine similarities
-    cosine_similarity_array <- numeric(nrow(dk_participant))
-    for (i in 1:nrow(dk_participant)) {
-      running_centroid <- cumulative_sum[i, ] / i
-      cosine_similarity_array[i] <- lsa::cosine(running_centroid, group_centroid_result$centroid)
-    }
+    # build participant running centroid
+    participant_running_centroid <- build_group_running_centroid(group_centroid, as.matrix(participant_vectors), verbose = verbose)
+    # attach the preserved original row index as `row_index` so downstream plotting aligns with original rows
+    participant_running_centroid$row_index <- row_index
 
-    # Save row indices and similarities as a data.frame
-    result_list[[participant]] <- data.frame(
-      row_index = participant_indices,
-      cosine_similarity = cosine_similarity_array
-    )
-  }
+    # add participant identifier to the result
+    # participant_running_centroid$participant <- participant
 
-  return(result_list)
+    return(participant_running_centroid)
+  })
+
+  names(participant_running_centroids) <- participant_names
+
+  return(participant_running_centroids)
 }

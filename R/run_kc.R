@@ -33,13 +33,20 @@ run_kc <- function(df,
                    k = 100,
                    verbose = TRUE) {
 
-  if (verbose) message("Starting knowledge convergence analysis...")
+  required_cols <- c(participant_col, text_col, time_col)
+  missing_cols <- setdiff(required_cols, names(df))
+  if (length(missing_cols) > 0) {
+    stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
+  }
 
   # rename columns to standard internal names
   colnames(df)[colnames(df) == participant_col] <- "participant"
   colnames(df)[colnames(df) == group_col] <- "group"
   colnames(df)[colnames(df) == text_col] <- "text"
   colnames(df)[colnames(df) == time_col] <- "X"
+
+  # remove any extra columns that are not needed
+  df <- df[, c("participant", "group", "X", "text")]
 
   # if a group column is provided, sort the data frame by groupd and time
   if (!is.null(group_col)) {
@@ -48,91 +55,58 @@ run_kc <- function(df,
     df <- df[order(df$X), ]
   }
 
-  if (!is.null(group_col)) {
-
-    if (verbose) message("Grouping data by: ", group_col)
-
-    overall_corpus <- build_corpus(df)
-    result_overall_centroid <- build_group_centroid(df, k = k, verbose = verbose)
-
-    # append the lsa#dk result onto the original data frame
-    lsa_result <- result_overall_centroid$lsa_result
-    df <- cbind(df, lsa_result$dk)
-
-    grouped_dfs <- df %>%
-      group_split(group)
-
-    group_names <- map_chr(grouped_dfs, ~ as.character(unique(.x$group)))
-
-
-    results_list <- grouped_dfs %>%
-      set_names(group_names) %>%
-      map(~ {
-        single_group_df <- .
-        # single_group_df <- grouped_dfs[[1]]
-        # result_group_centroid <- build_group_centroid(single_group_df, corpus = overall_corpus, k = k, verbose = verbose)
-        # separate the lsa result from the grouped_df (columns names 1-100)
-        single_group_df_vectors <- single_group_df %>%
-          select(matches("^[0-9]+$")) # %>%
-          # rename_with(~ paste0("V", seq_along(.)), matches("^[0-9]+$"))
-        # single_group_df$lsa_result$dk <- lsa_result$dk[, as.character(single_group_df$X)]
-        # separate the rest of the data
-        single_group_df_rest <- single_group_df %>%
-          select(participant, group, X, text)
-
-        # create a new result_group_centroid object
-        result_group_centroid <- list()
-        result_group_centroid$df <- single_group_df_rest
-        
-        result_group_centroid$lsa_result <- list(
-          dk = as.matrix(single_group_df_vectors)
-        )
-
-        centroid <- colMeans(single_group_df_vectors)
-
-        result_group_centroid <- list(
-          lsa_result = result_group_centroid$lsa_result,
-          centroid = centroid,
-          corpus = result_overall_centroid$corpus,
-          dtm = NULL,
-          df = single_group_df_rest
-        )
-
-   
-        result_group_running_centroid <- build_group_running_centroid(result_group_centroid, verbose = verbose)
-        result_participant_running_centroid <- build_participant_running_centroid(result_group_centroid, verbose = verbose)
-        result_visualizations <- visualize_kc_plot(result_group_running_centroid, result_participant_running_centroid, verbose = verbose)
-
-        list(
-          group = unique(single_group_df$group),
-          group_centroid = result_group_centroid,
-          group_running_centroid = result_group_running_centroid,
-          participant_running_centroids = result_participant_running_centroid,
-          visualizations = result_visualizations,
-          df = single_group_df
-        )
-      })
-
-    return(results_list)
-
-  } else {
-
-    if (verbose) message("No grouping column provided, treating all data as a single group.")
+  # this is a centroid for all the data (in the case of a single group, it is also the group centroid)
+  overall_centroid_result <- build_centroid(df, k, verbose = verbose)
   
-    result_group_centroid <- build_group_centroid(df, k = k, verbose = verbose)
-    result_group_running_centroid <- build_group_running_centroid(result_group_centroid, verbose = verbose)
-    result_participant_running_centroid <- build_participant_running_centroid(result_group_centroid, verbose = verbose)
-    result_visualizations <- visualize_kc_plot(result_group_running_centroid, result_participant_running_centroid, verbose = verbose)
+  # extract lsa_result$dk and append to the original data frame
+  df <- cbind(df, overall_centroid_result$lsa_result$dk)
 
-    final_results <- list(
-      group_centroid = result_group_centroid,
-      group_running_centroid = result_group_running_centroid,
-      participant_running_centroids = result_participant_running_centroid,
-      visualizations = result_visualizations,
-      df = df
-    )
+  # if no group provided, create placeholder for group column
+  if (is.null(group_col)) {
+    df$group <- "overall"
   }
 
-  if (verbose) message("Knowledge convergence analysis complete.")
-  return(final_results)
+  grouped_dfs <- df %>%
+      group_split(group)
+
+  group_names <- unique(df$group)
+
+  result <- grouped_dfs %>%
+    set_names(group_names) %>%
+    map(~ {
+      single_group_df <- .
+
+      # select all columns except participant, group, X, and text
+      single_group_df_vectors <- single_group_df %>%
+        select(-participant, -group, -X, -text)
+
+      group_centroid <- colMeans(single_group_df_vectors)
+
+      # build group running centroid
+      group_running_centroid <- build_group_running_centroid(group_centroid, as.matrix(single_group_df_vectors), verbose = verbose)
+
+      # build participant running centroids
+      participant_running_centroids <- build_participant_running_centroid(single_group_df, group_centroid, verbose = verbose)
+
+      # visulalize
+      visuals <- visualize_kc_plot(
+        group_running_centroid,
+        participant_running_centroids
+      )
+
+      return(list(
+        group_running_centroid = group_running_centroid,
+        participant_running_centroids = participant_running_centroids,
+        visualizations = visuals,
+        df = single_group_df
+      ))
+    })
+
+  # final_result <- list(
+  #   group_running_centroid = group_running_centroid,
+  #   participant_running_centroids = participant_running_centroids,
+  #   visualizations = visuals,
+  #   df = df
+  # )
+
 }

@@ -29,32 +29,9 @@
 #' result <- build_group_centroid(my_data, k = 100)
 #' str(result$centroid)
 #' }
-build_group_centroid <- function(df, corpus = NULL, 
-                participant_col = "participant", 
-                text_col = "text", 
-                time_col = "X",
-                k = 100,
-                verbose = TRUE) {
+build_centroid <- function(df, k, verbose = TRUE) {
 
-  if (!requireNamespace("tm", quietly = TRUE)) stop("Package 'tm' is required.")
-  if (!requireNamespace("lsa", quietly = TRUE)) stop("Package 'lsa' is required.")
-
-  required_cols <- c(participant_col, text_col, time_col)
-  missing_cols <- setdiff(required_cols, names(df))
-  if (length(missing_cols) > 0) {
-    stop("Missing required columns: ", paste(missing_cols, collapse = ", "))
-  }
-
-  # Relabel columns to standard internal names
-  df <- df[, required_cols]
-  colnames(df) <- c("participant", "text", "time")
-
-  if (is.null(corpus)) {
-    if (verbose) message("No corpus provided, creating from data frame.")
-    corpus <- build_corpus(df, text_col = text_col)
-  } else {
-    if (verbose) message("Using provided corpus.")
-  }
+  corpus <- build_corpus(df)
 
   dtm <- as.matrix(tm::TermDocumentMatrix(corpus))
 
@@ -67,7 +44,7 @@ build_group_centroid <- function(df, corpus = NULL,
     lsa_result = lsa_result,
     centroid = centroid,
     corpus = corpus,
-    dtm = dtm,
-    df = df
-  ), class = "build_group_centroid_result")
+    dtm = dtm
+  ), class = "overall_centroid_result")
+
 }
