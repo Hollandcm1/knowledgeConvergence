@@ -8,7 +8,7 @@ build_group_centroid(
   df,
   corpus = NULL,
   participant_num = "participant_num",
-  text = "text",
+  text_col = "text",
   time = "X",
   k = 100,
   verbose = TRUE
@@ -21,13 +21,13 @@ build_group_centroid(
 
 \item{participant_num}{The name of the column identifying participants. Defaults to `"participant_num"`.}
 
-\item{text}{The name of the column containing text data. Defaults to `"text"`.}
-
 \item{time}{The name of the column containing time or ordering information. Defaults to `"X"`.}
 
 \item{k}{The number of dimensions to retain in the LSA-reduced space. Defaults to 100.}
 
 \item{verbose}{Logical. Should progress messages be printed? Defaults to `TRUE`.}
+
+\item{text}{The name of the column containing text data. Defaults to `"text"`.}
 }
 \value{
 A list of class `"build_group_centroid_result"` containing:

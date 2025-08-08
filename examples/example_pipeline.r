@@ -27,9 +27,13 @@ dialog_list <- fromJSON(paste(json_text, collapse = ""))
 library(here)
 devtools::load_all(here())
 library(knowledgeConvergence)
+library(lsa)
+library(ggplot2)
+library(dplyr)
+library(purrr)
 
-# load the data
-data <- read.csv(here("examples", "example_data.csv"))
+# # load the data
+# data <- read.csv(here("examples", "example_data.csv"))
 
 test_data <- here("testing_data", "test_data.rds")
 test_data <- readRDS(test_data)
@@ -40,9 +44,9 @@ group_1_data <- test_data[test_data$group_num == 1, ]
 # calculate the overall group centroid
 result  <- build_group_centroid(group_1_data,
                      corpus = NULL, 
-                     participant_num = "participant_num", 
-                     text = "text", 
-                     time = "X",
+                     participant_col = "participant_num", 
+                     text_col = "text", 
+                     time_col = "X",
                      k = 100,
                      verbose = TRUE)
 

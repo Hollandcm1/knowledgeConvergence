@@ -22,8 +22,10 @@
 #' plots <- visualize_kc_plot(group_running, participant_running)
 #' plots$combined_plot
 #' }
-visualize_kc_plot <- function(group_running_centroid, participant_running_centroids) {
+visualize_kc_plot <- function(group_running_centroid, participant_running_centroids, verbose = TRUE) {
   library(ggplot2)
+
+  if (verbose) message("Preparing visualization...")
 
   # Create a data frame for the group running centroid
   group_df <- data.frame(

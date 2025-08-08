@@ -4,39 +4,44 @@
 \alias{run_kc}
 \title{Run Knowledge Convergence Analysis}
 \usage{
-run_kc(data)
+run_kc(
+  df,
+  participant_num = "participant_num",
+  text = "text",
+  time = "X",
+  k = 100,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{data}{A cleaned and pre-processed data frame of conversation transcripts.
-Must include variables such as `group_num`, `participant_num`, and `text`.}
+\item{df}{A cleaned and pre-processed data frame containing at minimum the columns `group_num`, `participant_num`, and `text`. An additional column specified by `time` is required for tracking temporal progression.}
+
+\item{participant_num}{Name of the column identifying participants. Defaults to `"participant_num"`.}
+
+\item{text}{Name of the column containing text data. Defaults to `"text"`.}
+
+\item{time}{Name of the column indicating temporal order (e.g., turn number or timestamp). Defaults to `"X"`.}
+
+\item{k}{The number of dimensions to retain in the LSA-reduced space. Defaults to 100.}
+
+\item{verbose}{Logical flag to indicate whether progress messages should be printed. Defaults to `TRUE`.}
 }
 \value{
-A named list with the following components:
+A named list with the following elements:
 \describe{
-  \item{group_centroid}{A data frame representing the group-level semantic centroid.}
-  \item{group_running_centroid}{A data frame tracking the group centroid's cosine similarity trajectory.}
-  \item{participant_running_centroids}{A named list of data frames with cosine similarity trajectories for each participant.}
+  \item{group_centroid}{A list containing the LSA output, semantic centroid, and intermediate representations for the full group conversation.}
+  \item{group_running_centroid}{A data frame showing the trajectory of the group-level semantic centroid over time.}
+  \item{participant_running_centroids}{A named list of data frames, each representing a participant's similarity to the group centroid over time.}
 }
 }
 \description{
-This is the primary function of the `knowledgeConvergence` package. It computes semantic similarity measures
-between participants and their group by calculating centroids of meaning across time. These results are used to assess
-the degree and trajectory of conceptual alignment within a group conversation.
-}
-\details{
-Specifically, this function:
-\itemize{
-  \item Computes a semantic centroid for each group.
-  \item Tracks the running centroid of each group over the course of a conversation.
-  \item Computes running centroids for each participant and their evolving similarity to the group centroid.
-}
-
-The returned object can be used for further visualization or statistical modeling using other functions in the package.
+This function performs the main analysis for measuring conceptual alignment across participants in a group conversation. It calculates semantic centroids using Latent Semantic Analysis (LSA), tracks group-level trajectories over time, and computes each participant's evolving similarity to their group's centroid.
 }
 \examples{
 \dontrun{
 cleaned_data <- apply_cleaning_steps(raw_data, list_of_cleaning_functions)
 results <- run_kc(cleaned_data)
+print(results$group_running_centroid)
 }
 
 }

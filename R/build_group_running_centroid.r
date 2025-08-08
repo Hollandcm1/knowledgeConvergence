@@ -22,7 +22,10 @@
 #' result <- build_group_centroid(my_data)
 #' group_sim_df <- build_group_running_centroid(result)
 #' }
-build_group_running_centroid <- function(group_centroid_result) {
+build_group_running_centroid <- function(group_centroid_result, verbose = TRUE) {
+  
+  if (verbose) message("Building group running centroid...")
+  
   # Extract the centroid vector
   centroid <- group_centroid_result$centroid
 

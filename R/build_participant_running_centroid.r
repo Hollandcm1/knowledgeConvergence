@@ -23,7 +23,10 @@
 #' result <- build_group_centroid(my_data)
 #' participant_sims <- build_participant_running_centroid(result)
 #' }
-build_participant_running_centroid <- function(group_centroid_result) {
+build_participant_running_centroid <- function(group_centroid_result, verbose = TRUE) {
+
+  if (verbose) message("Building participant running centroids...")
+
   # Extract LSA result
   lsa_result <- group_centroid_result$lsa_result
 
