@@ -1,35 +1,35 @@
-#' Build Group-Level LSA Centroid
+#' Build Global LSA Centroid
 #'
-#' This function computes a Latent Semantic Analysis (LSA)-based centroid representing
-#' the semantic content of a group conversation. It performs dimensionality reduction
-#' on a term-document matrix constructed from a provided data frame and returns a
-#' structured object containing the centroid, LSA results, and other relevant metadata.
+#' Compute a Latent Semantic Analysis (LSA) centroid representing the semantic content
+#' of the provided conversation data. The function builds a text corpus from the
+#' `text` column, constructs a term–document matrix, performs LSA dimensionality
+#' reduction, and returns the reduced-space representation along with the global
+#' centroid.
 #'
-#' @param df A data frame containing at minimum a participant identifier, text column, and time column.
-#' @param corpus An optional prebuilt `tm::Corpus` object. If `NULL`, a corpus is generated from the `text` column.
-#' @param participant_col The name of the column identifying participants. Defaults to `"participant_num"`.
-#' @param text_col The name of the column containing text data. Defaults to `"text"`.
-#' @param time_col The name of the column containing time or ordering information. Defaults to `"X"`.
-#' @param k The number of dimensions to retain in the LSA-reduced space. Defaults to 100.
+#' @param df A data frame containing at least a `text` column. Any other columns
+#'   are ignored by this function.
+#' @param k Integer. The number of dimensions to retain in the LSA-reduced space.
+#'   Defaults to 100.
 #' @param verbose Logical. Should progress messages be printed? Defaults to `TRUE`.
 #'
-#' @return A list of class `"build_group_centroid_result"` containing:
+#' @return A list of class `overall_centroid_result` containing:
 #' \describe{
-#'   \item{lsa_result}{The result of `lsa::lsa()` containing the reduced-space representation.}
-#'   \item{centroid}{A vector representing the average position of all documents in LSA space.}
-#'   \item{corpus}{The `tm::Corpus` object used.}
-#'   \item{dtm}{The term-document matrix.}
-#'   \item{df}{The input data frame, relabeled to standard internal columns.}
+#'   \item{lsa_result}{The result of [lsa::lsa()] containing reduced-space matrices.}
+#'   \item{centroid}{A numeric vector: the average position of all documents in LSA space.}
+#'   \item{corpus}{The [tm::Corpus] used to create the term–document matrix.}
+#'   \item{dtm}{The term–document matrix used for LSA (as a base matrix).}
 #' }
-#'
-#' @export
 #'
 #' @examples
 #' \dontrun{
-#' result <- build_group_centroid(my_data, k = 100)
+#' result <- build_centroid(my_data, k = 100)
 #' str(result$centroid)
 #' }
-build_centroid <- function(df, k, verbose = TRUE) {
+#'
+#' @importFrom tm Corpus VectorSource TermDocumentMatrix
+#' @importFrom lsa lsa
+#' @export
+build_centroid <- function(df, k = 100, verbose = TRUE) {
 
   corpus <- build_corpus(df)
 

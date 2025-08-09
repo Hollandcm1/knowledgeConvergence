@@ -1,29 +1,31 @@
 #' Visualize Knowledge Convergence Trajectories
 #'
-#' This function creates line plots of cosine similarity trajectories between each participant's
-#' running semantic centroid and the group-level centroid over time. It also includes the group trajectory.
+#' Create line/point plots of cosine similarity trajectories between each participant's
+#' running centroid and the group-level centroid over time (row order). Includes a
+#' group trajectory and combined plots.
 #'
-#' @param group_running_centroid A data frame containing `row_index` and `cosine_similarity` columns
-#'   for the group's running centroid (as returned by `build_group_running_centroid()`).
+#' @param group_running_centroid A data frame with columns `row_index` and `cosine_similarity`.
 #' @param participant_running_centroids A named list of data frames, one per participant,
-#'   each with `row_index` and `cosine_similarity` columns (as returned by `build_participant_running_centroid()`).
+#'   each with `row_index` and `cosine_similarity`.
+#' @param verbose Logical; print progress messages. Defaults to `TRUE`.
 #'
 #' @return A list of `ggplot` objects:
 #' \describe{
-#'   \item{group_plot}{A line plot showing the group's running cosine similarity.}
-#'   \item{participant_plot}{A multi-line plot showing each participant's similarity trajectory.}
-#'   \item{combined_plot}{A combined plot showing all trajectories.}
+#'   \item{group_plot}{Line plot for the group trajectory.}
+#'   \item{participant_plot}{Multi-line plot of participant trajectories.}
+#'   \item{combined_plot}{All trajectories combined (lines).}
+#'   \item{combined_plot_points}{All trajectories combined (points).}
 #' }
-#'
-#' @export
 #'
 #' @examples
 #' \dontrun{
 #' plots <- visualize_kc_plot(group_running, participant_running)
 #' plots$combined_plot
 #' }
+#'
+#' @importFrom ggplot2 ggplot aes geom_line geom_point labs theme_minimal
+#' @export
 visualize_kc_plot <- function(group_running_centroid, participant_running_centroids, verbose = TRUE) {
-  library(ggplot2)
 
   if (verbose) message("Preparing visualization...")
 
@@ -56,18 +58,18 @@ visualize_kc_plot <- function(group_running_centroid, participant_running_centro
   # Plot the participant running centroids
   p2 <- ggplot(participant_df, aes(x = time, y = cosine_similarity, color = participant)) +
     geom_line() +
-    labs(title = "Participant Running Centroids", x = "Row Index", y = "Cosine Similarity") +
+    labs(title = "Participant Running Centroids", x = "Time", y = "Cosine Similarity") +
     theme_minimal()
 
   # Plot the combined data
   p3 <- ggplot(combined_df, aes(x = time, y = cosine_similarity, color = participant)) +
     geom_line() +
-    labs(title = "Combined Running Centroids", x = "Row Index", y = "Cosine Similarity") +
+    labs(title = "Combined Running Centroids", x = "Time", y = "Cosine Similarity") +
     theme_minimal()
 
   p4 <- ggplot(combined_df, aes(x = time, y = cosine_similarity, color = participant)) +
     geom_point() +
-    labs(title = "Combined Running Centroids", x = "Row Index", y = "Cosine Similarity") +
+    labs(title = "Combined Running Centroids", x = "Time", y = "Cosine Similarity") +
     theme_minimal()
 
   return(list(group_plot = p1, participant_plot = p2, combined_plot = p3, combined_plot_points = p4))

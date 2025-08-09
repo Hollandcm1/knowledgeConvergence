@@ -1,28 +1,31 @@
-#' Build Running Cosine Similarity to Group Centroid by Participant
+#' Build Participant Running Similarity to Group Centroid
 #'
-#' For each participant, computes a running centroid across their utterances and
-#' calculates the cosine similarity of that running centroid to the full group centroid.
+#' For each participant in a single-group data frame, compute a running centroid of
+#' their own utterances (in reduced LSA space) and the cosine similarity of that
+#' running centroid to the group's global centroid.
 #'
-#' @param group_centroid_result A list returned from `build_group_centroid()`, containing:
-#'   \itemize{
-#'     \item \code{lsa_result}: the LSA result object containing the document-term matrix.
-#'     \item \code{centroid}: the group-level centroid vector.
-#'     \item \code{df}: a data frame with at least a `participant` column.
-#'   }
+#' @param single_group_df A data frame for one group containing columns `participant`,
+#'   `group`, `X` (time/order), `text`, and the reduced-space dimensions (from LSA)
+#'   as additional numeric columns.
+#' @param group_centroid Numeric vector. The group's centroid in reduced space.
+#' @param verbose Logical; print progress messages. Defaults to `TRUE`.
 #'
-#' @return A named list where each element corresponds to a participant and contains a data frame with:
-#'   \itemize{
-#'     \item \code{row_index}: the row number from the original data.
-#'     \item \code{cosine_similarity}: similarity to the full group centroid at each utterance.
-#'   }
-#'
-#' @export
+#' @return A named list where each element corresponds to a participant and contains
+#'   a data frame with:
+#' \itemize{
+#'   \item `row_index`: the preserved original row index from column `X`.
+#'   \item `cosine_similarity`: similarity of the participant's running centroid to the group centroid.
+#' }
 #'
 #' @examples
 #' \dontrun{
-#' result <- build_group_centroid(my_data)
-#' participant_sims <- build_participant_running_centroid(result)
+#' pcs <- build_participant_running_centroid(single_group_df, group_centroid)
+#' str(pcs[[1]])
 #' }
+#'
+#' @importFrom dplyr select
+#' @importFrom lsa cosine
+#' @export
 build_participant_running_centroid <- function(single_group_df, group_centroid, verbose) {
 
   if (verbose) message("Building participant running centroids...")
@@ -40,7 +43,7 @@ build_participant_running_centroid <- function(single_group_df, group_centroid, 
       select(-participant, -group, -X, -text)
 
     # calculate the participant centroid
-    participant_centroid <- colMeans(participant_vectors)
+    # participant_centroid <- colMeans(participant_vectors)
 
     # build participant running centroid
     participant_running_centroid <- build_group_running_centroid(group_centroid, as.matrix(participant_vectors), verbose = verbose)

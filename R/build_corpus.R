@@ -13,6 +13,7 @@
 #' corpus <- build_corpus(df)
 #' inspect(corpus)
 #'
+#' @importFrom tm Corpus VectorSource
 #' @export
 build_corpus <- function(df, text_col = "text") {
   corpus <- tm::Corpus(tm::VectorSource(df[[text_col]]))

@@ -1,29 +1,47 @@
 #' Run Knowledge Convergence Analysis
 #'
-#' This function performs the main analysis for measuring conceptual alignment across participants in a group conversation. It calculates semantic centroids using Latent Semantic Analysis (LSA), tracks group-level trajectories over time, and computes each participant's evolving similarity to their group's centroid. If a grouping column is provided, the analysis is performed separately for each group; otherwise, all data is treated as a single group.
+#' Perform the main analysis for measuring conceptual alignment across participants
+#' in a conversation. The function builds a global LSA space, computes a group
+#' centroid and running group trajectory, and for each participant computes a running
+#' similarity trajectory to the group centroid. If a grouping column is supplied,
+#' the analysis is applied separately within each group; otherwise all rows are
+#' treated as a single group.
 #'
-#' @param df A cleaned and pre-processed data frame containing at minimum the columns `group_num`, `participant_num`, and `text`. An additional column specified by `time` is required for tracking temporal progression.
-#' @param participant_col Name of the column identifying participants. Defaults to `"participant_num"`.
-#' @param group_col Optional. Name of the column identifying groups. If NULL, data is treated as a single group.
-#' @param text_col Name of the column containing text data. Defaults to `"text"`.
-#' @param time_col Name of the column indicating temporal order (e.g., turn number or timestamp). Defaults to `"X"`.
-#' @param k The number of dimensions to retain in the LSA-reduced space. Defaults to 100.
-#' @param verbose Logical flag to indicate whether progress messages should be printed. Defaults to `TRUE`.
+#' @param df A cleaned data frame containing at minimum the columns specified by
+#'   `participant_col`, `text_col`, and `time_col`. If `group_col` is provided,
+#'   it must also exist in `df`.
+#' @param participant_col Column name for participants. Default: "participant".
+#' @param group_col Optional column name for groups. Default: `NULL`.
+#' @param text_col Column name containing the text. Default: "text".
+#' @param time_col Column name indicating temporal order (e.g., turn index or timestamp).
+#'   Default: "X".
+#' @param k Integer. Number of LSA dimensions. Default: 100.
+#' @param verbose Logical; print progress messages. Default: `TRUE`.
 #'
-#' @return A named list with the following elements:
+#' @return A named list keyed by group (or a single element "overall" when `group_col` is `NULL`).
+#'   Each element is a list with components:
 #' \describe{
-#'   \item{group_centroid}{A list containing the LSA output, semantic centroid, and intermediate representations for the full group conversation.}
-#'   \item{group_running_centroid}{A data frame showing the trajectory of the group-level semantic centroid over time.}
-#'   \item{participant_running_centroids}{A named list of data frames, each representing a participant's similarity to the group centroid over time.}
+#'   \item{group_running_centroid}{Data frame of the group's running similarity to the group centroid.}
+#'   \item{participant_running_centroids}{Named list of participant running similarity data frames.}
+#'   \item{visualizations}{List of `ggplot` objects from [visualize_kc_plot()].}
+#'   \item{df}{The group's data frame with reduced-space columns appended.}
 #' }
 #'
 #' @examples
 #' \dontrun{
-#' cleaned_data <- apply_cleaning_steps(raw_data, list_of_cleaning_functions)
-#' results <- run_kc(cleaned_data)
-#' print(results$group_running_centroid)
+#' results <- run_kc(cleaned_data,
+#'                   participant_col = "participant",
+#'                   group_col = NULL,
+#'                   text_col = "text",
+#'                   time_col = "X",
+#'                   k = 100)
+#' names(results)
+#' results[[1]]$visualizations$combined_plot
 #' }
 #'
+#' @importFrom dplyr select group_split
+#' @importFrom purrr map set_names
+#' @importFrom magrittr %>%
 #' @export
 run_kc <- function(df,
                    participant_col = "participant",
@@ -41,12 +59,21 @@ run_kc <- function(df,
 
   # rename columns to standard internal names
   colnames(df)[colnames(df) == participant_col] <- "participant"
-  colnames(df)[colnames(df) == group_col] <- "group"
   colnames(df)[colnames(df) == text_col] <- "text"
   colnames(df)[colnames(df) == time_col] <- "X"
+  if (!is.null(group_col)) {
+    colnames(df)[colnames(df) == group_col] <- "group"
+  }
 
   # remove any extra columns that are not needed
-  df <- df[, c("participant", "group", "X", "text")]
+  keep <- c("participant", "X", "text")
+  if (!is.null(group_col)) keep <- c(keep, "group")
+  df <- df[, keep, drop = FALSE]
+
+  # if no group provided, create placeholder for group column
+  if (is.null(group_col)) {
+    df$group <- "overall"
+  }
 
   # if a group column is provided, sort the data frame by groupd and time
   if (!is.null(group_col)) {
@@ -61,15 +88,10 @@ run_kc <- function(df,
   # extract lsa_result$dk and append to the original data frame
   df <- cbind(df, overall_centroid_result$lsa_result$dk)
 
-  # if no group provided, create placeholder for group column
-  if (is.null(group_col)) {
-    df$group <- "overall"
-  }
-
   grouped_dfs <- df %>%
       group_split(group)
 
-  group_names <- unique(df$group)
+  group_names <- dplyr::group_keys(dplyr::group_by(df, group))$group
 
   result <- grouped_dfs %>%
     set_names(group_names) %>%
@@ -102,11 +124,6 @@ run_kc <- function(df,
       ))
     })
 
-  # final_result <- list(
-  #   group_running_centroid = group_running_centroid,
-  #   participant_running_centroids = participant_running_centroids,
-  #   visualizations = visuals,
-  #   df = df
-  # )
+  return(result)
 
 }
