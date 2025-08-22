@@ -1,27 +1,27 @@
-#' Build Running Cosine Similarity to Group Centroid
+#' Build Running Cosine Similarity to a Reference Centroid
 #'
-#' Computes the running centroid of all utterances in the dataset and calculates
-#' cosine similarity at each step compared to the full group centroid.
+#' Given a matrix of document vectors (rows = utterances, columns = LSA dimensions)
+#' and a reference centroid vector, compute at each step the cosine similarity between
+#' the cumulative running centroid and the reference centroid.
 #'
-#' @param group_centroid_result A list returned from `build_group_centroid()`, containing:
-#'   \itemize{
-#'     \item \code{lsa_result}: the LSA result object containing the document-term matrix.
-#'     \item \code{centroid}: the group-level centroid vector.
-#'   }
+#' @param group_centroid Numeric vector. The reference centroid in the same space as `dk`.
+#' @param dk A numeric matrix where each row is a document/utterance vector in reduced space.
+#' @param verbose Logical; print progress messages. Defaults to `TRUE`.
 #'
-#' @return A data frame with:
-#'   \itemize{
-#'     \item \code{row_index}: the row number in the original data.
-#'     \item \code{cosine_similarity}: the similarity between the running centroid and the full group centroid.
-#'   }
-#'
-#' @export
+#' @return A data frame with two columns:
+#' \itemize{
+#'   \item `row_index`: the step index (1..nrow(dk)).
+#'   \item `cosine_similarity`: cosine similarity between the running centroid and `group_centroid`.
+#' }
 #'
 #' @examples
 #' \dontrun{
-#' result <- build_group_centroid(my_data)
-#' group_sim_df <- build_group_running_centroid(result)
+#' sims <- build_group_running_centroid(group_centroid, dk)
+#' head(sims)
 #' }
+#'
+#' @importFrom lsa cosine
+#' @export
 build_group_running_centroid <- function(group_centroid, dk, verbose) {
 
   # Preallocate cosine similarity array
