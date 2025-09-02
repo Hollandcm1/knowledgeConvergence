@@ -49,4 +49,4 @@ Dong introduced the concept of a **semantic centroid** for a team, and measured 
 
 ```r
 # Development version
-devtools::install_github("Hollancm1/knowledgeConvergence")
+devtools::install_github("Hollandcm1/knowledgeConvergence")
