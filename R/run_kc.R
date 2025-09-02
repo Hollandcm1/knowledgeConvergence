@@ -18,14 +18,14 @@
 #' @param k Integer. Number of LSA dimensions. Default: 100.
 #' @param verbose Logical; print progress messages. Default: `TRUE`.
 #'
-#' @return A named list keyed by group (or a single element "overall" when `group_col` is `NULL`).
-#'   Each element is a list with components:
+#' @return #' @return When `group_col` is `NULL`, a single list with components:
 #' \describe{
 #'   \item{group_running_centroid}{Data frame of the group's running similarity to the group centroid.}
 #'   \item{participant_running_centroids}{Named list of participant running similarity data frames.}
 #'   \item{visualizations}{List of `ggplot` objects from [visualize_kc_plot()].}
 #'   \item{df}{The group's data frame with reduced-space columns appended.}
 #' }
+#' When `group_col` is provided, a named list keyed by group, where each element contains the same components as above.
 #'
 #' @examples
 #' \dontrun{
@@ -124,6 +124,12 @@ run_kc <- function(df,
       ))
     })
 
-  return(result)
+  # Return shape: if no group column was provided, return the single group's
+  # result directly (unnested). Otherwise return the named list by group.
+  if (is.null(group_col)) {
+    return(result[[1]])
+  } else {
+    return(result)
+  }
 
 }
