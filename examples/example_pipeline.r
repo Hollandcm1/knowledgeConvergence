@@ -25,3 +25,12 @@ result <- run_kc(df,
                  time_col = "X",
                  k = 100,
                  verbose = TRUE)
+
+save_path <- here("examples", "example_output")
+dir.create(save_path, recursive = TRUE, showWarnings = FALSE)
+# save the "combined_plot_points" plot for each group (only one group in this case)
+ggsave(file.path(save_path, "combined_plot_points.png"), plot = result$overall$visualizations$combined_plot_points)
+
+
+# Access to the underlying data is also available
+names(result$overall)
