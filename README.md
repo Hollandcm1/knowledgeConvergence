@@ -50,3 +50,21 @@ Dong introduced the concept of a **semantic centroid** for a team, and measured 
 ```r
 # Development version
 devtools::install_github("Hollandcm1/knowledgeConvergence")
+
+
+## Example Output and Explination
+
+The Knowledge Convergence (KC) figure provides a visual summary of how participants in a conversation align conceptually over time. The plot has two main elements:
+
+- **Group trajectory (bold line):** This line shows the running similarity of the group’s centroid — a mathematical representation of the collective semantic position — to itself over the course of the conversation. It represents the evolving “shared understanding” within the group.  
+- **Individual trajectories (lighter lines):** Each participant’s line shows their running similarity to the group centroid. These curves illustrate how closely each person’s contributions align with the group’s evolving shared conceptual space.
+
+Together, the figure highlights:
+- **Moments of convergence**, where individual lines cluster tightly around the group trajectory (indicating participants are “on the same page”).  
+- **Moments of divergence**, where lines spread apart (indicating one or more participants are introducing different concepts).  
+- **Temporal dynamics**, showing how alignment changes throughout the conversation rather than just as a static summary.
+
+This visualization is valuable for spotting patterns such as whether a group gradually builds shared understanding, whether some participants lead or lag behind, or whether alignment fluctuates in response to task phases or key discussion points.
+
+<img width="3042" height="3042" alt="combined_plot_points" src="https://github.com/user-attachments/assets/69d7271e-b0c5-4101-87f4-6112790a9402" />
+
