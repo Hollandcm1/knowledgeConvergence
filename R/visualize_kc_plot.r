@@ -36,15 +36,48 @@ visualize_kc_plot <- function(group_running_centroid, participant_running_centro
     cosine_similarity = group_running_centroid$cosine_similarity
   )
 
-  # Create a data frame for participant running centroids (now includes row_index)
-  participant_df <- do.call(rbind, lapply(names(participant_running_centroids), function(participant) {
-    df <- participant_running_centroids[[participant]]
-    df$participant <- participant  # add a column for participant ID
-    df
-  }))
+  # Use indices to avoid [[NA]] lookups when a name is missing
+  nms <- names(participant_running_centroids)
+  cleaned_list <- lapply(seq_along(participant_running_centroids), function(i) {
+    df <- participant_running_centroids[[i]]
 
-  # Rename 'row_index' to 'time' for plotting consistency
-  colnames(participant_df)[colnames(participant_df) == "row_index"] <- "time"
+    # Skip NULL elements explicitly
+    if (is.null(df)) {
+      stop(sprintf("Element %d of `participant_running_centroids` is NULL.", i))
+    }
+
+    # Determine participant id (fallback to index if name is NA/empty)
+    pid <- nms[i]
+    if (is.null(pid) || is.na(pid) || identical(pid, "") ) pid <- as.character(i)
+
+    # Basic checks with informative errors
+    required_cols <- c("row_index", "cosine_similarity")
+    if (!all(required_cols %in% names(df))) {
+      missing <- setdiff(required_cols, names(df))
+      stop(sprintf(
+        "Participant '%s' (index %d) is missing required column(s): %s\nAvailable columns: %s",
+        pid, i, paste(missing, collapse = ", "), paste(names(df), collapse = ", ")
+      ))
+    }
+
+    # Keep only required columns in a fixed order
+    df <- df[, required_cols, drop = FALSE]
+
+    # Rename to match plotting semantics and coerce types
+    names(df)[names(df) == "row_index"] <- "time"
+    df$time <- as.numeric(df$time)
+    df$cosine_similarity <- as.numeric(df$cosine_similarity)
+
+    # Tag with participant id as a character column
+    df$participant <- as.character(pid)
+
+    # Ensure final column order is consistent
+    df <- df[, c("participant", "time", "cosine_similarity")]
+    df
+  })
+
+  # Combine cleaned participant data frames
+  participant_df <- do.call(rbind, cleaned_list)
 
   # Combine the group and participant data frames
   combined_df <- rbind(group_df, participant_df)
